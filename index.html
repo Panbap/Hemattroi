@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vũ Trụ 3D với Mặt Trời và 9 Hành Tinh</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+    let scene, camera, renderer, controls;
+    let planets = [];
+    const sunRadius = 5; // Bán kính mặt trời
+    const planetData = [
+        { size: 2.5, color: 0xffcc88, orbitRadius: 15, speed: 0.5 }, // Hành tinh 1
+        { size: 3.5, color: 0x88ff88, orbitRadius: 25, speed: 0.4 }, // Hành tinh 2
+        { size: 3, color: 0x88ccff, orbitRadius: 35, speed: 0.3 }, // Trái Đất (Hành tinh 3)
+        { size: 2, color: 0xff88cc, orbitRadius: 45, speed: 0.2 }, // Hành tinh 4
+        { size: 2.2, color: 0xffff88, orbitRadius: 55, speed: 0.15 }, // Hành tinh 5
+        { size: 1.8, color: 0x88ffff, orbitRadius: 65, speed: 0.1 }, // Hành tinh 6
+        { size: 2, color: 0xff88ff, orbitRadius: 75, speed: 0.08 }, // Hành tinh 7
+        { size: 2.5, color: 0xcc88ff, orbitRadius: 85, speed: 0.06 }, // Hành tinh 8
+        { size: 4.5, color: 0x88cc88, orbitRadius: 95, speed: 0.04 }, // Hành tinh 9
+    ];
+
+    function init() {
+        const container = document.getElementById('container');
+
+        // Tạo scene
+        scene = new THREE.Scene();
+
+        // Tạo camera
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 150;
+
+        // Tạo renderer
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        container.appendChild(renderer.domElement);
+
+        // Tạo controls để xoay cảnh bằng chuột
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        // Thêm ánh sáng
+        const light = new THREE.PointLight(0xffffff, 1.5);
+        light.position.set(50, 50, 50);
+        scene.add(light);
+
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+
+        // Vẽ nền ngôi sao
+        createStarfield();
+
+        // Tạo mặt trời
+        createSun();
+
+        // Tạo các hành tinh
+        for (const data of planetData) {
+            const planet = createPlanet(data.size, data.color, data.orbitRadius);
+            planets.push({ mesh: planet, speed: data.speed, orbitRadius: data.orbitRadius });
+        }
+
+        // Tạo vòng lặp render
+        function animate() {
+            requestAnimationFrame(animate);
+            updatePlanets();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    }
+
+    // Hàm tạo mặt trời
+    function createSun() {
+        const sunGeometry = new THREE.SphereGeometry(sunRadius, 32, 32);
+        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+        const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+        scene.add(sun);
+    }
+
+    // Hàm tạo nền sao
+    function createStarfield() {
+        const starGeometry = new THREE.BufferGeometry();
+        const starMaterial = new THREE.PointsMaterial({ color: 0xffffff });
+
+        const starVertices = [];
+        for (let i = 0; i < 10000; i++) {
+            const x = (Math.random() - 0.5) * 2000;
+            const y = (Math.random() - 0.5) * 2000;
+            const z = (Math.random() - 0.5) * 2000;
+            starVertices.push(x, y, z);
+        }
+
+        starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
+    }
+
+    // Hàm tạo hành tinh với kích thước và màu
+    function createPlanet(size, color, orbitRadius) {
+        const geometry = new THREE.SphereGeometry(size, 32, 32);
+        const material = new THREE.MeshPhongMaterial({ color: color });
+        const planet = new THREE.Mesh(geometry, material);
+
+        planet.position.x = orbitRadius; // Đặt vị trí ban đầu của hành tinh
+        scene.add(planet);
+        return planet;
+    }
+
+    // Hàm cập nhật vị trí hành tinh
+    function updatePlanets() {
+        const time = Date.now() * 0.001; // Thời gian để xoay
+
+        planets.forEach((planet) => {
+            const angle = time * planet.speed; // Tính góc quay
+            planet.mesh.position.x = Math.cos(angle) * planet.orbitRadius; // Cập nhật vị trí x
+            planet.mesh.position.z = Math.sin(angle) * planet.orbitRadius; // Cập nhật vị trí z
+        });
+    }
+
+    // Xử lý kích thước cửa sổ thay đổi
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Khởi tạo vũ trụ 3D
+    init();
+</script>
+
+</body>
+</html>
